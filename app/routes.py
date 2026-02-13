@@ -34,6 +34,11 @@ class CreateCounter(BaseModel):
         return v
 
 
+@router.get("/counters")
+async def list_counters():
+    return await db.list_counters()
+
+
 @router.post("/counters", status_code=201)
 async def create_counter(body: CreateCounter):
     existing = await db.get_counter(body.name)

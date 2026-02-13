@@ -13,6 +13,13 @@ async def init_db():
         """)
         await db.commit()
 
+async def list_counters() -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT name, count, created_at FROM counters ORDER BY created_at DESC") as cursor:
+            rows = await cursor.fetchall()
+            return [{"name": r["name"], "count": r["count"], "created_at": r["created_at"]} for r in rows]
+
 async def get_counter(name: str) -> dict | None:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row

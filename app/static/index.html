@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 2rem; }
+        .container { max-width: 720px; margin: 0 auto; }
+        h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #94a3b8; margin-bottom: 2rem; }
+
+        .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #f8fafc; }
+
+        .form-row { display: flex; gap: 0.5rem; }
+        input[type="text"] { flex: 1; padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.95rem; outline: none; }
+        input[type="text"]:focus { border-color: #3b82f6; }
+        button { padding: 0.6rem 1.25rem; border-radius: 6px; border: none; background: #3b82f6; color: #fff; font-size: 0.95rem; cursor: pointer; white-space: nowrap; }
+        button:hover { background: #2563eb; }
+        button.secondary { background: #334155; }
+        button.secondary:hover { background: #475569; }
+        button.hit { background: #10b981; }
+        button.hit:hover { background: #059669; }
+
+        .msg { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem; display: none; }
+        .msg.error { display: block; background: #7f1d1d; color: #fca5a5; }
+        .msg.success { display: block; background: #14532d; color: #86efac; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; font-weight: 500; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { font-size: 0.95rem; }
+        .count { font-weight: 700; color: #3b82f6; font-variant-numeric: tabular-nums; }
+        .actions { display: flex; gap: 0.35rem; }
+        .empty { color: #64748b; padding: 2rem; text-align: center; }
+
+        .badge-snippet { margin-top: 0.5rem; }
+        .badge-snippet code { display: block; background: #0f172a; padding: 0.5rem; border-radius: 4px; font-size: 0.8rem; color: #94a3b8; word-break: break-all; cursor: pointer; }
+        .badge-snippet code:hover { color: #e2e8f0; }
+
+        .loading { color: #64748b; padding: 2rem; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Counter API</h1>
+        <p class="subtitle">Create counters and embed them on your sites</p>
+
+        <div class="card">
+            <h2>Create Counter</h2>
+            <div class="form-row">
+                <input type="text" id="newName" placeholder="my-site-visitors" />
+                <button onclick="createCounter()">Create</button>
+            </div>
+            <div class="msg" id="createMsg"></div>
+        </div>
+
+        <div class="card">
+            <h2>Counters</h2>
+            <div id="counterList"><div class="loading">Loading...</div></div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin + '/api';
+
+        async function loadCounters() {
+            const el = document.getElementById('counterList');
+            try {
+                const res = await fetch(`${API}/counters`);
+                const counters = await res.json();
+                if (!counters.length) {
+                    el.innerHTML = '<div class="empty">No counters yet. Create one above.</div>';
+                    return;
+                }
+                counters.sort((a, b) => b.count - a.count);
+                el.innerHTML = `
+                    <table>
+                        <thead><tr><th>Name</th><th>Count</th><th>Created</th><th>Actions</th></tr></thead>
+                        <tbody>${counters.map(c => `
+                            <tr>
+                                <td>${esc(c.name)}</td>
+                                <td class="count" id="count-${esc(c.name)}">${c.count.toLocaleString()}</td>
+                                <td>${new Date(c.created_at + 'Z').toLocaleDateString()}</td>
+                                <td class="actions">
+                                    <button class="hit" onclick="hitCounter('${esc(c.name)}')">+1</button>
+                                    <button class="secondary" onclick="showBadge('${esc(c.name)}')">Badge</button>
+                                </td>
+                            </tr>
+                            <tr class="badge-snippet" id="badge-row-${esc(c.name)}" style="display:none">
+                                <td colspan="4">
+                                    <img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="${esc(c.name)} badge" />
+                                    <code onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="visitors" /&gt;</code>
+                                </td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>`;
+            } catch (e) {
+                el.innerHTML = '<div class="empty">Failed to load counters.</div>';
+            }
+        }
+
+        async function createCounter() {
+            const input = document.getElementById('newName');
+            const msg = document.getElementById('createMsg');
+            const name = input.value.trim();
+            if (!name) return;
+
+            try {
+                const res = await fetch(`${API}/counters`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    msg.className = 'msg error';
+                    msg.textContent = data.detail || 'Error creating counter';
+                    return;
+                }
+                msg.className = 'msg success';
+                msg.textContent = `Counter "${name}" created!`;
+                input.value = '';
+                loadCounters();
+            } catch (e) {
+                msg.className = 'msg error';
+                msg.textContent = 'Network error';
+            }
+        }
+
+        async function hitCounter(name) {
+            const res = await fetch(`${API}/counters/${encodeURIComponent(name)}/hit`, { method: 'POST' });
+            const data = await res.json();
+            const el = document.getElementById(`count-${name}`);
+            if (el) el.textContent = data.count.toLocaleString();
+        }
+
+        function showBadge(name) {
+            const row = document.getElementById(`badge-row-${name}`);
+            if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+        }
+
+        function copySnippet(el) {
+            navigator.clipboard.writeText(el.textContent);
+            const orig = el.textContent;
+            el.textContent = 'Copied!';
+            setTimeout(() => el.textContent = orig, 1000);
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        document.getElementById('newName').addEventListener('keydown', e => { if (e.key === 'Enter') createCounter(); });
+        loadCounters();
+    </script>
+</body>
+</html>
