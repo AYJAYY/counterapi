@@ -69,9 +69,13 @@ async def badge(
     name: str,
     label: str = Query(default="visitors"),
     color: str = Query(default="#007ec6"),
+    hit: bool = Query(default=False),
 ):
     _validate_name(name)
-    counter = await db.get_counter(name)
+    if hit:
+        counter = await db.increment_counter(name)
+    else:
+        counter = await db.get_counter(name)
     count = counter["count"] if counter else 0
     svg = render_badge(label, count, color)
     return Response(content=svg, media_type="image/svg+xml", headers={

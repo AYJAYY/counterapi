@@ -92,7 +92,7 @@
                             <tr class="badge-snippet" id="badge-row-${esc(c.name)}" style="display:none">
                                 <td colspan="4">
                                     <img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="${esc(c.name)} badge" />
-                                    <code onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="visitors" /&gt;</code>
+                                    <code onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg?hit=true" alt="visitors" /&gt;</code>
                                 </td>
                             </tr>
                         `).join('')}</tbody>
