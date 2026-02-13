@@ -1,6 +1,6 @@
 import re
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, field_validator
 
@@ -58,22 +58,25 @@ async def get_counter(name: str):
 
 
 @router.post("/counters/{name}/hit")
-async def hit_counter(name: str):
+async def hit_counter(name: str, request: Request):
     _validate_name(name)
-    counter = await db.increment_counter(name)
+    ip = request.headers.get("X-Forwarded-For", request.client.host).split(",")[0].strip()
+    counter = await db.increment_counter(name, ip)
     return counter
 
 
 @router.get("/counters/{name}/badge.svg")
 async def badge(
     name: str,
+    request: Request,
     label: str = Query(default="visitors"),
     color: str = Query(default="#007ec6"),
     hit: bool = Query(default=False),
 ):
     _validate_name(name)
     if hit:
-        counter = await db.increment_counter(name)
+        ip = request.headers.get("X-Forwarded-For", request.client.host).split(",")[0].strip()
+        counter = await db.increment_counter(name, ip)
     else:
         counter = await db.get_counter(name)
     count = counter["count"] if counter else 0

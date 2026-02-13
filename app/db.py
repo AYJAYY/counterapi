@@ -11,6 +11,14 @@ async def init_db():
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS hits (
+                counter_name TEXT NOT NULL,
+                ip TEXT NOT NULL,
+                hit_at TEXT NOT NULL DEFAULT (datetime('now')),
+                PRIMARY KEY (counter_name, ip)
+            )
+        """)
         await db.commit()
 
 async def list_counters() -> list[dict]:
@@ -37,13 +45,23 @@ async def create_counter(name: str) -> dict:
         await db.commit()
     return await get_counter(name)
 
-async def increment_counter(name: str) -> dict:
+async def increment_counter(name: str, ip: str) -> dict:
     async with aiosqlite.connect(DB_PATH) as db:
-        # Auto-create on hit
+        # Auto-create counter if it doesn't exist
         await db.execute(
-            "INSERT INTO counters (name, count) VALUES (?, 1) "
-            "ON CONFLICT(name) DO UPDATE SET count = count + 1",
+            "INSERT INTO counters (name) VALUES (?) ON CONFLICT(name) DO NOTHING",
             (name,),
         )
+        # Only count if this IP hasn't been seen for this counter
+        cursor = await db.execute(
+            "INSERT INTO hits (counter_name, ip) VALUES (?, ?) "
+            "ON CONFLICT(counter_name, ip) DO NOTHING",
+            (name, ip),
+        )
+        if cursor.rowcount > 0:
+            await db.execute(
+                "UPDATE counters SET count = count + 1 WHERE name = ?",
+                (name,),
+            )
         await db.commit()
     return await get_counter(name)
