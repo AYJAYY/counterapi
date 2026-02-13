@@ -1,18 +1,18 @@
 # HTTP — redirect to HTTPS
 server {
     listen 8732;
-    server_name counter.bullock.app;
-    return 301 https://counter.bullock.app:8733$request_uri;
+    server_name bullock.app;
+    return 301 https://bullock.app:8733$request_uri;
 }
 
 # HTTPS — SSL termination + reverse proxy
 server {
     listen 8733 ssl http2;
-    server_name counter.bullock.app;
+    server_name bullock.app;
 
     # Let's Encrypt SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/counter.bullock.app/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/counter.bullock.app/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/bullock.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bullock.app/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;

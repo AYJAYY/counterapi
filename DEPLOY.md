@@ -23,37 +23,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 2. DNS
-
-Add an **A record** for the subdomain pointing to your VPS IP:
-
-| Type | Name | Content |
-|------|------|---------|
-| A | counter | YOUR_VPS_IP |
-
-This creates `counter.bullock.app`.
-
-## 3. Firewall
+## 2. Firewall
 
 ```bash
 sudo ufw allow 8732
 sudo ufw allow 8733
 ```
 
-## 4. SSL Certificate
+## 3. SSL Certificate
 
-```bash
-# Temporarily allow port 80 for certbot
-sudo ufw allow 80
-sudo systemctl stop nginx
+The existing Let's Encrypt certificate for `bullock.app` is reused (already set up for Inclusiv). No additional cert needed.
 
-sudo certbot certonly --standalone -d counter.bullock.app
-
-sudo systemctl start nginx
-sudo ufw delete allow 80
-```
-
-## 5. nginx
+## 4. nginx
 
 ```bash
 sudo cp deploy/counterapi.nginx /etc/nginx/sites-available/counterapi
@@ -62,7 +43,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 6. systemd Service
+## 5. systemd Service
 
 ```bash
 sudo cp deploy/counterapi.service /etc/systemd/system/
@@ -71,24 +52,24 @@ sudo systemctl enable counterapi
 sudo systemctl start counterapi
 ```
 
-## 7. Verify
+## 6. Verify
 
 ```bash
 # Health check
-curl -I http://counter.bullock.app:8732/api/health
-curl -I https://counter.bullock.app:8733/api/health
+curl -I http://bullock.app:8732/api/health
+curl -I https://bullock.app:8733/api/health
 
 # Create and hit a counter
-curl -X POST https://counter.bullock.app:8733/api/counters \
+curl -X POST https://bullock.app:8733/api/counters \
   -H 'Content-Type: application/json' -d '{"name":"test"}'
-curl -X POST https://counter.bullock.app:8733/api/counters/test/hit
-curl https://counter.bullock.app:8733/api/counters/test
+curl -X POST https://bullock.app:8733/api/counters/test/hit
+curl https://bullock.app:8733/api/counters/test
 
 # Test SSL certificate
-openssl s_client -connect counter.bullock.app:8733 -servername counter.bullock.app
+openssl s_client -connect bullock.app:8733 -servername bullock.app
 ```
 
-## 8. SSL Auto-Renewal
+## 7. SSL Auto-Renewal
 
 ```bash
 sudo crontab -e
