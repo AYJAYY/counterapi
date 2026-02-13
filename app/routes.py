@@ -69,8 +69,8 @@ async def hit_counter(name: str, request: Request):
 async def badge(
     name: str,
     request: Request,
-    label: str = Query(default="visitors"),
-    color: str = Query(default="#007ec6"),
+    label: str = Query(default="Visitors"),
+    color: str = Query(default="#1f3886"),
     hit: bool = Query(default=False),
 ):
     _validate_name(name)
