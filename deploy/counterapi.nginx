@@ -1,27 +1,29 @@
 # HTTP — redirect to HTTPS
 server {
     listen 8732;
-    server_name counter.inclusiv.click;
-    return 301 https://$host:8733$request_uri;
+    server_name counter.bullock.app;
+    return 301 https://counter.bullock.app:8733$request_uri;
 }
 
 # HTTPS — SSL termination + reverse proxy
 server {
-    listen 8733 ssl;
-    server_name counter.inclusiv.click;
+    listen 8733 ssl http2;
+    server_name counter.bullock.app;
 
-    ssl_certificate /etc/letsencrypt/live/counter.inclusiv.click/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/counter.inclusiv.click/privkey.pem;
+    # Let's Encrypt SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/counter.bullock.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/counter.bullock.app/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
 
     # Security headers
-    add_header X-Frame-Options SAMEORIGIN;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
     location / {
         proxy_pass http://127.0.0.1:8001;
