@@ -1,0 +1,15 @@
+[Unit]
+Description=Counter API
+After=network.target
+
+[Service]
+User=python
+Group=python
+WorkingDirectory=/home/python/counterapi
+ExecStart=/home/python/counterapi/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=3
+Environment=PATH=/home/python/counterapi/venv/bin:/usr/bin
+
+[Install]
+WantedBy=multi-user.target
