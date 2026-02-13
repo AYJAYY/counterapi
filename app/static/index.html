@@ -107,6 +107,11 @@
             const msg = document.getElementById('createMsg');
             const name = input.value.trim();
             if (!name) return;
+            if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+                msg.className = 'msg error';
+                msg.textContent = 'Name can only contain letters, digits, hyphens, and underscores (no spaces).';
+                return;
+            }
 
             try {
                 const res = await fetch(`${API}/counters`, {
@@ -117,7 +122,10 @@
                 const data = await res.json();
                 if (!res.ok) {
                     msg.className = 'msg error';
-                    msg.textContent = data.detail || 'Error creating counter';
+                    let errMsg = 'Error creating counter';
+                    if (typeof data.detail === 'string') errMsg = data.detail;
+                    else if (Array.isArray(data.detail)) errMsg = data.detail.map(e => e.msg).join(', ');
+                    msg.textContent = errMsg;
                     return;
                 }
                 msg.className = 'msg success';
