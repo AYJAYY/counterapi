@@ -364,6 +364,26 @@
             opacity: 1;
         }
 
+        .badge-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .badge-option input[type="checkbox"] {
+            accent-color: var(--accent-bright);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .badge-option label {
+            cursor: pointer;
+            user-select: none;
+        }
+
         .empty-state {
             padding: 3rem 1.5rem;
             text-align: center;
@@ -464,6 +484,43 @@
             animation: countPop 0.3s ease;
         }
 
+        /* User bar */
+        .user-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .user-bar .user-email {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .user-bar .sign-out {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .user-bar .sign-out:hover {
+            color: var(--text-secondary);
+            border-color: var(--border-hover);
+        }
+
+        .user-bar .sign-out:focus-visible {
+            outline: 2px solid var(--accent-bright);
+            outline-offset: 2px;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             .wrapper { padding: 2rem 1rem 3rem; }
@@ -477,6 +534,10 @@
 </head>
 <body>
     <div class="wrapper">
+        <nav class="user-bar" id="userBar" aria-label="User menu" style="display:none">
+            <span class="user-email" id="userEmail"></span>
+            <a href="/auth/logout" class="sign-out">Sign Out</a>
+        </nav>
         <div class="header">
             <div class="header-row">
                 <div class="logo">#</div>
@@ -513,10 +574,26 @@
     <script>
         const API = window.location.origin + '/api';
 
+        // Load current user info
+        (async function checkAuth() {
+            try {
+                const res = await fetch('/auth/me');
+                if (!res.ok) { window.location.href = '/login'; return; }
+                const user = await res.json();
+                const bar = document.getElementById('userBar');
+                const emailEl = document.getElementById('userEmail');
+                emailEl.textContent = user.email;
+                bar.style.display = '';
+            } catch {
+                window.location.href = '/login';
+            }
+        })();
+
         async function loadCounters() {
             const el = document.getElementById('counterList');
             try {
                 const res = await fetch(`${API}/counters`);
+                if (res.status === 401) { window.location.href = '/login'; return; }
                 const counters = await res.json();
                 if (!counters.length) {
                     el.innerHTML = `
@@ -554,8 +631,12 @@
                                 </div>
                             </div>
                             <div class="badge-panel" id="badge-row-${esc(c.name)}" style="display:none">
-                                <img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="${esc(c.name)} badge" />
-                                <div class="snippet-box" onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg?hit=true" alt="visitors" /&gt;</div>
+                                <div class="badge-option">
+                                    <input type="checkbox" id="icon-toggle-${esc(c.name)}" onchange="updateBadge('${esc(c.name)}')" />
+                                    <label for="icon-toggle-${esc(c.name)}">Show icon</label>
+                                </div>
+                                <img id="badge-img-${esc(c.name)}" src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="${esc(c.name)} badge" />
+                                <div class="snippet-box" id="badge-snippet-${esc(c.name)}" onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg?hit=true" alt="visitors" /&gt;</div>
                             </div>
                         `).join('')}
                     </div>`;
@@ -620,6 +701,16 @@
         function toggleBadge(name) {
             const row = document.getElementById(`badge-row-${name}`);
             if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+        }
+
+        function updateBadge(name) {
+            const cb = document.getElementById(`icon-toggle-${name}`);
+            const img = document.getElementById(`badge-img-${name}`);
+            const snippet = document.getElementById(`badge-snippet-${name}`);
+            const encoded = encodeURIComponent(name);
+            const iconParam = cb.checked ? '&icon=true' : '';
+            img.src = `${API}/counters/${encoded}/badge.svg?${iconParam}`;
+            snippet.textContent = `<img src="${API}/counters/${encoded}/badge.svg?hit=true${iconParam}" alt="visitors" />`;
         }
 
         function copySnippet(el) {

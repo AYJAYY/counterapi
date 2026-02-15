@@ -72,6 +72,7 @@ async def badge(
     label: str = Query(default="Visitors"),
     color: str = Query(default="#1f3886"),
     hit: bool = Query(default=False),
+    icon: bool = Query(default=False),
 ):
     _validate_name(name)
     if hit:
@@ -80,7 +81,7 @@ async def badge(
     else:
         counter = await db.get_counter(name)
     count = counter["count"] if counter else 0
-    svg = render_badge(label, count, color)
+    svg = render_badge(label, count, color, icon=icon)
     return Response(content=svg, media_type="image/svg+xml", headers={
         "Cache-Control": "no-cache, no-store, must-revalidate",
     })
