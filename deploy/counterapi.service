@@ -6,7 +6,7 @@ After=network.target
 User=python
 Group=python
 WorkingDirectory=/home/python/counterapi
-ExecStart=/home/python/counterapi/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
+ExecStart=/home/python/counterapi/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001 --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=always
 RestartSec=3
 Environment=PATH=/home/python/counterapi/venv/bin:/usr/bin
