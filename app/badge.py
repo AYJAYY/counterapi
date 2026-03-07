@@ -15,7 +15,7 @@ ICON_B64 = (
 )
 
 
-def render_badge(label: str, count: int, color: str = "#007ec6", icon: bool = False) -> str:
+def render_badge(label: str, count: int, color: str = "#007ec6", label_color: str = "#555", icon: bool = False) -> str:
     """Render a shields.io-style SVG badge."""
     count_text = f"{count:,}"
 
@@ -43,7 +43,7 @@ def render_badge(label: str, count: int, color: str = "#007ec6", icon: bool = Fa
     <rect width="{total_width}" height="20" rx="3" fill="#fff"/>
   </clipPath>
   <g clip-path="url(#round)">
-    <rect width="{label_width}" height="20" fill="#555"/>
+    <rect width="{label_width}" height="20" fill="{label_color}"/>
     <rect x="{label_width}" width="{count_width}" height="20" fill="{color}"/>
     <rect width="{total_width}" height="20" fill="url(#smooth)"/>
   </g>

@@ -384,6 +384,16 @@
             user-select: none;
         }
 
+        .badge-option input[type="color"] {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-deep);
+            cursor: pointer;
+            padding: 2px;
+        }
+
         .empty-state {
             padding: 3rem 1.5rem;
             text-align: center;
@@ -578,6 +588,12 @@
                                     <input type="checkbox" id="icon-toggle-${esc(c.name)}" onchange="updateBadge('${esc(c.name)}')" />
                                     <label for="icon-toggle-${esc(c.name)}">Show icon</label>
                                 </div>
+                                <div class="badge-option">
+                                    <label for="label-color-${esc(c.name)}">Label</label>
+                                    <input type="color" id="label-color-${esc(c.name)}" value="#555555" onchange="updateBadge('${esc(c.name)}')" />
+                                    <label for="count-color-${esc(c.name)}">Count</label>
+                                    <input type="color" id="count-color-${esc(c.name)}" value="#1f3886" onchange="updateBadge('${esc(c.name)}')" />
+                                </div>
                                 <img id="badge-img-${esc(c.name)}" src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg" alt="${esc(c.name)} badge" />
                                 <div class="snippet-box" id="badge-snippet-${esc(c.name)}" onclick="copySnippet(this)" title="Click to copy">&lt;img src="${API}/counters/${encodeURIComponent(c.name)}/badge.svg?hit=true" alt="visitors" /&gt;</div>
                             </div>
@@ -648,12 +664,19 @@
 
         function updateBadge(name) {
             const cb = document.getElementById(`icon-toggle-${name}`);
+            const labelColor = document.getElementById(`label-color-${name}`).value;
+            const countColor = document.getElementById(`count-color-${name}`).value;
             const img = document.getElementById(`badge-img-${name}`);
             const snippet = document.getElementById(`badge-snippet-${name}`);
             const encoded = encodeURIComponent(name);
-            const iconParam = cb.checked ? '&icon=true' : '';
-            img.src = `${API}/counters/${encoded}/badge.svg?${iconParam}`;
-            snippet.textContent = `<img src="${API}/counters/${encoded}/badge.svg?hit=true${iconParam}" alt="visitors" />`;
+            const params = new URLSearchParams();
+            if (cb.checked) params.set('icon', 'true');
+            if (labelColor !== '#555555') params.set('labelColor', labelColor);
+            if (countColor !== '#1f3886') params.set('color', countColor);
+            const qs = params.toString();
+            img.src = `${API}/counters/${encoded}/badge.svg${qs ? '?' + qs : ''}`;
+            params.set('hit', 'true');
+            snippet.textContent = `<img src="${API}/counters/${encoded}/badge.svg?${params.toString()}" alt="visitors" />`;
         }
 
         function copySnippet(el) {
